@@ -1,0 +1,38 @@
+services:
+  db: # Base de datos PostgreSQL
+    image: postgres:15-alpine
+    container_name: vision_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: vision_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - "./docker_data/postgres_data:/var/lib/postgresql/data"
+  
+  redis: # Servidor Redis para cola de mensajes
+    image: redis:7-alpine
+    container_name: vision_redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  minio: # Servidor MinIO para almacenamiento de archivos
+    image: minio/minio:latest
+    container_name: vision_minio
+    restart: always
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000" # API
+      - "9001:9001" # Consola web
+    volumes:
+      - ./docker_data/minio:/data
+
+networks:
+  default:
+    driver: bridge
