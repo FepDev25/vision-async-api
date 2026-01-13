@@ -22,6 +22,16 @@ class Settings(BaseSettings):
             f"{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
     
+    # url sincrona para alembic
+    @computed_field
+    @property
+    def SQLALCHEMY_DATABASE_URI_SYNC(self) -> str:
+        return (
+            f"postgresql+psycopg2://{self.POSTGRES_USER}:"
+            f"{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:"
+            f"{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        )
+    
     # MinIO
     MINIO_ENDPOINT: str
     MINIO_ACCESS_KEY: str
@@ -33,6 +43,12 @@ class Settings(BaseSettings):
     REDIS_HOST: str
     REDIS_PORT: int
     REDIS_DB: int
+
+    # generar la url de conexion a redis
+    @computed_field
+    @property
+    def REDIS_URL(self) -> str:
+        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
 
     # configuración de carga
     model_config = SettingsConfigDict(
