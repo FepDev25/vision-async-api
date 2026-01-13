@@ -1,5 +1,5 @@
 from app.core.database import Base
-from sqlalchemy import Column, String, Enum, DateTime
+from sqlalchemy import Column, String, Enum, DateTime, func
 from sqlalchemy.dialects.postgresql import UUID, JSON
 from datetime import datetime
 import uuid
@@ -26,6 +26,5 @@ class Task(Base):
     # resultado del procesamiento (JSON nullable)
     result = Column(JSON, nullable=True)
     # timestamps automáticos
-    created_at = Column(DateTime, nullable=False, default=datetime.now(datetime.timezone.utc))
-    updated_at = Column(DateTime, nullable=False, default=datetime.now(datetime.timezone.utc), 
-                        onupdate=datetime.now(datetime.timezone.utc))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
