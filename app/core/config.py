@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     MINIO_BUCKET_NAME: str
     MINIO_SECURE: bool
 
+    # Redis
+    REDIS_HOST: str
+    REDIS_PORT: int
+    REDIS_DB: int
+
     # configuración de carga
     model_config = SettingsConfigDict(
         env_file=".env",
