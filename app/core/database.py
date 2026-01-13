@@ -4,7 +4,7 @@ from app.core.config import settings
 
 # engine asíncrono, es el motor
 engine = create_async_engine(
-    settings.POSTGRES_DB,
+    settings.SQLALCHEMY_DATABASE_URI,
     echo=True,
     future=True,
 )
