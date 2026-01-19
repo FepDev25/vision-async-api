@@ -2,8 +2,9 @@ from app.core.celery_app import celery_app
 from app.core.database import SessionLocalSync
 from app.services.storage import MinioService
 from app.models import Task, TaskStatus
-import time
 from uuid import UUID
+import numpy as np
+import cv2
 
 # Procesa una imagen de forma asíncrona
 # Args: task_id: ID de la tarea a procesar (UUID como string)
@@ -34,20 +35,43 @@ def process_image(task_id: str) -> bool:
             print(f"Descargando imagen: {task.filename}")
             image_data = minio_service.get_file(task.filename)
             
-            # Simular procesamiento con GPU
-            print(f"Procesando imagen (simulación)...")
-            time.sleep(5)
+            # Procesamiento con OpenCV (in-memory)
+            print(f"Procesando imagen con OpenCV...")
+            
+            # Paso 1: Convertir bytes a numpy array
+            nparr = np.frombuffer(image_data, np.uint8)
+            
+            # Paso 2: Decodificar a imagen BGR
+            image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            
+            if image is None:
+                raise ValueError("No se pudo decodificar la imagen")
+            
+            # Paso 3: Convertir a escala de grises
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            
+            # Paso 4: Aplicar detección de bordes Canny
+            edges = cv2.Canny(gray, 100, 200)
+            
+            # Paso 5: Codificar de vuelta a bytes (como PNG)
+            # cv2.imencode devuelve (success, buffer) donde buffer es un array numpy
+            success, buffer = cv2.imencode('.png', edges)
+            
+            if not success:
+                raise ValueError("No se pudo codificar la imagen procesada")
+            
+            # Convertir el buffer numpy a bytes del PNG
+            processed_image_data = bytes(buffer)
             
             # Transformar el nombre del archivo
             filename_parts = task.filename.rsplit('.', 1)
             if len(filename_parts) == 2:
-                processed_filename = f"processed_{filename_parts[0]}.{filename_parts[1]}"
+                processed_filename = f"processed_{filename_parts[0]}.png"
             else:
-                processed_filename = f"processed_{task.filename}"
+                processed_filename = f"processed_{task.filename}.png"
             
-            # Subir el archivo procesado (por ahora los mismos bytes)
-            print(f"Subiendo imagen procesada: {processed_filename}")
-            minio_service.upload_file(image_data, processed_filename)
+            # Subir el archivo procesado
+            minio_service.upload_file(processed_image_data, processed_filename)
             
             # Actualizar la tarea como completada
             task.status = TaskStatus.COMPLETED
