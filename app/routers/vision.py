@@ -8,6 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from uuid import UUID
 import uuid
+import io
+from starlette.responses import StreamingResponse
 
 router = APIRouter(
     prefix="/vision",
@@ -95,3 +97,45 @@ async def get_task(task_id: UUID, db: AsyncSession = Depends(get_async_db)):
         )
     
     return task
+
+# Endpoint para descargar el archivo procesado de una tarea completada.
+@router.get("/tasks/{task_id}/result")
+async def download_processed_file(task_id: UUID,
+    db: AsyncSession = Depends(get_async_db),
+    minio_service: MinioService = Depends(get_minio_service)):
+
+    # Buscar la tarea en la base de datos
+    result = await db.execute(
+        select(Task).where(Task.id == task_id)
+    )
+    task = result.scalar_one_or_none()
+
+    # Si no existe, retornar 404
+    if not task:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Tarea con ID {task_id} no encontrada"
+        )
+    
+    # Verificar que la tarea esté completada
+    if task.status != TaskStatus.COMPLETED or not task.result:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La tarea no está completada o no tiene un archivo procesado"
+        )
+    
+    processed_filename = task.result.get("processed_file")
+    if not processed_filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No se encontró el archivo procesado en el resultado de la tarea"
+        )
+    
+    # Descargar el archivo procesado desde MinIO
+    file_data = minio_service.get_file(processed_filename)
+    
+    return StreamingResponse(
+        io.BytesIO(file_data),
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": f"attachment; filename={processed_filename}"}
+    )
