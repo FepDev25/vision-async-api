@@ -3,13 +3,13 @@
 API asíncrona para procesamiento de imágenes con detección de bordes utilizando FastAPI, Celery y OpenCV.
 
 **Autor:** Felipe Peralta  
-**Perfil:** Estudiante de Ingeniería en Ciencias de la Computación | Backend Developer
+**Perfil:** Estudiante de Ingeniería en Ciencias de la Computación
 
 ## Descripción del Proyecto
 
-Vision Async API es una aplicación web backend diseñada para procesar imágenes de forma asíncrona aplicando técnicas de visión por computadora. El sistema permite a los usuarios subir imágenes, las cuales son procesadas en segundo plano mediante workers de Celery, aplicando algoritmos de detección de bordes (Canny Edge Detection) y retornando los resultados procesados.
+Vision Async API es una aplicación web full-stack diseñada para procesar imágenes de forma asíncrona aplicando técnicas de visión por computadora. El sistema cuenta con un backend robusto (FastAPI + Celery) y un frontend interactivo (React + TypeScript) que permite a los usuarios subir imágenes, visualizar el progreso del procesamiento en tiempo real, y comparar los resultados del algoritmo de detección de bordes Canny.
 
-El proyecto implementa una arquitectura moderna basada en microservicios, con separación clara entre la API REST, el procesamiento asíncrono de tareas, y el almacenamiento de datos e imágenes.
+El proyecto implementa una arquitectura moderna basada en microservicios, con separación clara entre la API REST, el procesamiento asíncrono de tareas, el almacenamiento de datos e imágenes, y una interfaz de usuario que demuestra todo el flujo de trabajo.
 
 ## Tecnologías Utilizadas
 
@@ -30,6 +30,12 @@ El proyecto implementa una arquitectura moderna basada en microservicios, con se
 - **MinIO**: Almacenamiento de objetos compatible con S3 para imágenes
 - **OpenCV**: Biblioteca de visión por computadora para procesamiento de imágenes
 - **NumPy**: Procesamiento numérico para manipulación de arrays de imágenes
+
+### Frontend
+
+- **React 19**: Biblioteca de UI con TypeScript
+- **Vite**: Build tool y dev server de última generación
+- **Tailwind CSS v4**: Framework de estilos utility-first
 
 ### Herramientas de Desarrollo
 
@@ -94,9 +100,10 @@ docker-compose logs -f api
 
 **Accesos:**
 
-- **API**: <http://localhost:8000>
-- **Documentación**: <http://localhost:8000/docs>
-- **MinIO Console**: <http://localhost:9001> (minioadmin/minioadmin)
+- Frontend: <http://localhost:5173> (después de `npm run dev`)
+- API: <http://localhost:8000>
+- Documentación: <http://localhost:8000/docs>
+- MinIO Console: <http://localhost:9001> (minioadmin/minioadmin)
 
 ### Configuración Inicial de MinIO
 
@@ -104,11 +111,28 @@ docker-compose logs -f api
 2. Login: `minioadmin` / `minioadmin`
 3. Crea el bucket `images-input`
 
-### Probar la API
+### Frontend (React)
 
-Ve a <http://localhost:8000/docs> y prueba el endpoint `POST /api/v1/vision/analyze` subiendo una imagen.
+```bash
+# Navegar al directorio frontend
+cd frontend
 
-**[Ver Guía Completa de Docker Compose](docs/docker-compose-guide.md)** - Comandos, troubleshooting, desarrollo y más.
+# Instalar dependencias
+npm install
+
+# Iniciar servidor de desarrollo
+npm run dev
+
+# Visitar http://localhost:5173
+```
+
+### Probar la Aplicación
+
+1. Backend: <http://localhost:8000/docs> - Documentación interactiva
+2. Frontend: <http://localhost:5173> - Interfaz web para subir y visualizar imágenes
+3. MinIO: <http://localhost:9001> - Ver archivos almacenados
+
+Ver [Guía de Docker Compose](docs/docker-compose-guide.md) para comandos adicionales.
 
 ---
 
@@ -178,6 +202,9 @@ uv run uvicorn app.main:app --reload
 
 # Terminal 2 - Worker
 uv run celery -A app.core.celery_app worker --loglevel=info
+
+# Terminal 3 - Frontend
+cd frontend && npm run dev
 ```
 
 ---
@@ -269,7 +296,7 @@ uv run pytest app/tests/ -v --cov=app
 
 ```bash
 vision-async-api/
-├── app/
+├── app/                   # Backend (Python/FastAPI)
 │   ├── core/              # Configuración central (DB, Celery, Config)
 │   ├── models.py          # Modelos de base de datos
 │   ├── schemas.py         # Esquemas de validación (Pydantic)
@@ -278,6 +305,15 @@ vision-async-api/
 │   ├── worker.py          # Worker de Celery para procesamiento
 │   ├── alembic/           # Migraciones de base de datos
 │   └── tests/             # Suite de tests
+├── frontend/              # Frontend (React/TypeScript)
+│   ├── src/
+│   │   ├── api/           # Cliente API
+│   │   ├── components/    # Componentes React
+│   │   ├── App.tsx        # Componente principal
+│   │   ├── types.ts       # Tipos TypeScript
+│   │   └── index.css      # Estilos Tailwind
+│   ├── package.json
+│   └── vite.config.ts     # Configuración Vite
 ├── docs/                  # Documentación del proyecto
 │   ├── docker-compose-guide.md
 │   └── alembic-setup.md
@@ -364,6 +400,10 @@ Consulta la [Guía de Docker Compose](docs/docker-compose-guide.md) para más so
 
 ## Decisiones Técnicas
 
+### Frontend con Polling
+
+El frontend implementa polling automático cada 2 segundos para actualizar el estado de las tareas en tiempo real, permitiendo al usuario visualizar el progreso del procesamiento sin necesidad de WebSockets. El polling se detiene automáticamente cuando la tarea se completa o falla.
+
 ### Procesamiento In-Memory
 
 El procesamiento de imágenes se realiza completamente en memoria, sin escribir archivos temporales en disco. Los bytes se descargan de MinIO, se procesan con OpenCV usando NumPy arrays, y se suben de vuelta a MinIO, optimizando el rendimiento y evitando problemas de I/O.
@@ -381,12 +421,15 @@ Esto evita complejidades innecesarias al mezclar código asíncrono y síncrono 
 
 Se utilizan UUIDs en lugar de enteros autoincrementales para mayor seguridad al exponer IDs públicamente y evitar ataques de enumeración.
 
+### Vite Proxy
+
+El frontend usa el proxy de Vite para redirigir peticiones `/api` al backend, evitando problemas de CORS durante el desarrollo y simplificando la configuración.
+
 ## Contacto
 
 Felipe Peralta  
-Estudiante de Ingeniería en Ciencias de la Computación  
-Backend Developer
+Estudiante de Ingeniería en Ciencias de la Computación
 
----
+## Notas
 
-**Nota:** Este proyecto fue desarrollado con fines educativos como parte del aprendizaje de arquitecturas backend modernas y procesamiento asíncrono.
+Este proyecto fue desarrollado con fines educativos como parte del aprendizaje de arquitecturas backend modernas, procesamiento asíncrono y desarrollo full-stack.
