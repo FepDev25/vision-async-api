@@ -89,3 +89,38 @@ class MinioService:
             raise MinioServiceError(
                 f"Error inesperado al subir el archivo '{file_name}': {str(e)}"
             ) from e
+    
+    # Descarga un archivo del bucket de MinIO
+    # Args:
+    #      file_name: Nombre del archivo a descargar
+    # Returns:
+    #       bytes: Contenido del archivo
+    # Raises:
+    #       MinioServiceError: Si hay un error al descargar el archivo
+    def get_file(self, file_name: str) -> bytes:
+        try:
+            response = self.client.get_object(
+                Bucket=self.bucket_name,
+                Key=file_name
+            )
+            # Los datos están en la clave 'Body', debemos leerlos
+            return response['Body'].read()
+            
+        except ClientError as e:
+            error_code = e.response.get('Error', {}).get('Code', '')
+            if error_code == 'NoSuchKey':
+                raise MinioServiceError(
+                    f"El archivo '{file_name}' no existe en el bucket"
+                ) from e
+            else:
+                raise MinioServiceError(
+                    f"Error al descargar el archivo '{file_name}' de MinIO: {str(e)}"
+                ) from e
+        except BotoCoreError as e:
+            raise MinioServiceError(
+                f"Error de conexión al descargar el archivo '{file_name}': {str(e)}"
+            ) from e
+        except Exception as e:
+            raise MinioServiceError(
+                f"Error inesperado al descargar el archivo '{file_name}': {str(e)}"
+            ) from e
