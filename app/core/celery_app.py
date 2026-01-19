@@ -16,4 +16,5 @@ celery_app.conf.update(
     result_serializer="json",
     timezone="UTC",
     enable_utc=True,
+    include=["app.worker"]  # Importar módulos con tareas
 )
