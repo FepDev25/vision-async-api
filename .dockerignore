@@ -1,0 +1,50 @@
+# Docker data (volúmenes)
+docker_data/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+!README.md
+
+# Environment
+.env
+.env.local
+
+# Alembic
+app/alembic/versions/*.py
+!app/alembic/versions/__init__.py
+
+# Tests
+app/tests/
+
+# Project specific
+project-*/
+content/
+scripts/
+Makefile
