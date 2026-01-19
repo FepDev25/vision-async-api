@@ -22,7 +22,7 @@ def test_database_uri():
 
 def test_minio_settings():
     # verificar la configuración de MinIO
-    assert settings.MINIO_ENDPOINT == "localhost:9000"
+    assert settings.MINIO_ENDPOINT == "http://localhost:9000"
     assert settings.MINIO_ACCESS_KEY == "minioadmin"
     assert settings.MINIO_BUCKET_NAME == "images-input"
     assert settings.MINIO_SECURE == False
