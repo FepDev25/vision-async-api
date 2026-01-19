@@ -77,3 +77,21 @@ async def analyze_image(file: UploadFile = File(...),
             detail=f"Error al procesar la solicitud: {str(e)}"
         )
 
+# Endpoint para consultar el estado de una tarea por su ID.
+@router.get("/tasks/{task_id}", response_model=TaskResponse)
+async def get_task(task_id: UUID, db: AsyncSession = Depends(get_async_db)):
+    
+    # Buscar la tarea en la base de datos
+    result = await db.execute(
+        select(Task).where(Task.id == task_id)
+    )
+    task = result.scalar_one_or_none()
+    
+    # Si no existe, retornar 404
+    if not task:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Tarea con ID {task_id} no encontrada"
+        )
+    
+    return task
