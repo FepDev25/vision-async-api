@@ -11,6 +11,11 @@ services:
       - "5433:5432"
     volumes:
       - "./docker_data/postgres_data:/var/lib/postgresql/data"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
   
   redis: # Servidor Redis para cola de mensajes
     image: redis:7-alpine
@@ -18,6 +23,11 @@ services:
     restart: always
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   minio: # Servidor MinIO para almacenamiento de archivos
     image: minio/minio:latest
@@ -32,6 +42,87 @@ services:
       - "9001:9001" # Consola web
     volumes:
       - ./docker_data/minio:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api: # API FastAPI
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vision_api
+    restart: always
+    environment:
+      # API
+      PROJECT_NAME: "Vision Async API"
+      API_V1_STR: "/api/v1"
+      # PostgreSQL (usar nombre del servicio como host)
+      POSTGRES_SERVER: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: vision_db
+      # MinIO (usar nombre del servicio como host)
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_SECURE: "False"
+      MINIO_BUCKET_NAME: images-input
+      # Redis (usar nombre del servicio como host)
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    command: bash scripts/start.sh
+
+  worker: # Worker de Celery
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vision_worker
+    restart: always
+    environment:
+      # API
+      PROJECT_NAME: "Vision Async API"
+      API_V1_STR: "/api/v1"
+      # PostgreSQL
+      POSTGRES_SERVER: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: vision_db
+      # MinIO
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_SECURE: "False"
+      MINIO_BUCKET_NAME: images-input
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    command: uv run celery -A app.core.celery_app worker --loglevel=info
 
 networks:
   default:
