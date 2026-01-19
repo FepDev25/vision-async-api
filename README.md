@@ -136,6 +136,33 @@ Ver [Guía de Docker Compose](docs/docker-compose-guide.md) para comandos adicio
 
 ---
 
+## Despliegue y pruebas local con Docker y React
+
+### Iniciar backend con docker-compose
+
+![Iniciar backend](<content/img/01-docker compose up.png>)
+
+### Inicar frontend React
+
+![Inicar frontend](content/img/02-react.png)
+
+### Acceder a la app en el navegador
+
+![App en el navegador](content/img/03-navegador.png)
+
+### Subir imagen para procesamiento
+
+![Subir imagen para procesamiento](<content/img/04-subir imagen en cola.png>)
+Imagen en cola a la espera de un worker disponible
+
+### Procesamiento en curso y procesamiento completado
+
+![Procesamiento completado](<content/img/05-imagen procesado completo.png>)
+
+### Imagen procesada resultado final
+
+![Imagen procesada resultado final](<content/img/06-resultado.png>)
+
 ## Desarrollo Local
 
 Si prefieres ejecutar la API localmente (sin Docker):
@@ -206,8 +233,6 @@ uv run celery -A app.core.celery_app worker --loglevel=info
 # Terminal 3 - Frontend
 cd frontend && npm run dev
 ```
-
----
 
 ---
 
